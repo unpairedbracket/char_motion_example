@@ -1,0 +1,66 @@
+name: Setup github pages
+ 
+on: workflow_dispatch
+ 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+ 
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+ 
+jobs:
+  build:
+    env:
+      # Avoid rate-limiting. See: <https://github.com/cargo-bins/cargo-binstall/issues/2045>.
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up environment
+        run: |
+          # Rustflags:
+          RUSTFLAGS='-Zthreads=0'
+          echo "RUSTFLAGS=${RUSTFLAGS}" >> "${GITHUB_ENV}"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@main
+
+      - name: Build and add web bundle to app
+        run: |
+          cargo binstall --locked --no-confirm --force wasm-bindgen-cli
+          cargo binstall --locked --no-confirm --force wasm-opt
+          cargo build --config profile.web.inherits='"dev"' --no-default-features --profile web-release --target wasm32-unknown-unknown
+          wasm-bindgen --no-typescript --out-name char_motion_example --out-dir target/wasm32-unknown-unknown/web-release --target web target/wasm32-unknown-unknown/web-release/char_motion_example.wasm
+          wasm-opt --strip-debug -Os -o target/wasm32-unknown-unknown/web-release/char_motion_example_bg.wasm target/wasm32-unknown-unknown/web-release/char_motion_example_bg.wasm
+          mkdir -p web/build
+          mv 'target/wasm32-unknown-unknown/web-release/char_motion_example_bg.wasm' web/build
+          mv 'target/wasm32-unknown-unknown/web-release/char_motion_example.js' web/build
+
+      - name: Add assets to app
+        run: cp -R ./assets web/
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+ 
+  deploy:
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -3,21 +3,30 @@
 // Disable console on Windows for non-dev builds.
 #![cfg_attr(not(feature = "dev"), windows_subsystem = "windows")]
 
-mod asset_tracking;
-mod demo;
+pub mod asset_tracking;
+pub mod demo;
 #[cfg(feature = "dev")]
-mod dev_tools;
-mod menus;
-mod screens;
-mod theme;
+pub mod dev_tools;
+pub mod menus;
+pub mod screens;
+pub mod theme;
 
 use bevy::{asset::AssetMetaCheck, prelude::*};
+use wasm_bindgen::prelude::wasm_bindgen;
 
-fn main() -> AppExit {
-    App::new().add_plugins(AppPlugin).run()
+#[wasm_bindgen]
+pub fn run(name: String) {
+    run_inner(name);
 }
 
-pub struct AppPlugin;
+pub fn run_inner(name: String) -> AppExit {
+    App::new().add_plugins(AppPlugin(name)).run()
+}
+
+pub struct AppPlugin(String);
+
+#[derive(Resource)]
+pub struct InstanceName(String);
 
 impl Plugin for AppPlugin {
     fn build(&self, app: &mut App) {
@@ -33,7 +42,7 @@ impl Plugin for AppPlugin {
                 })
                 .set(WindowPlugin {
                     primary_window: Window {
-                        title: "Char Motion Example".to_string(),
+                        title: self.0.clone(),
                         fit_canvas_to_parent: true,
                         ..default()
                     }
@@ -70,6 +79,8 @@ impl Plugin for AppPlugin {
 
         // Spawn the main camera.
         app.add_systems(Startup, spawn_camera);
+
+        app.insert_resource(InstanceName(self.0.clone()));
     }
 }
 

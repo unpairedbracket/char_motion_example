@@ -1583,6 +1583,7 @@ dependencies = [
  "log",
  "rand",
  "tracing",
+ "wasm-bindgen",
 ]
 
 [[package]]

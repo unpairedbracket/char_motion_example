@@ -249,7 +249,9 @@ jobs:
           cargo build --config profile.web.inherits='"dev"' --no-default-features --profile web-release --target wasm32-unknown-unknown
           wasm-bindgen --no-typescript --out-name ${{ env.cargo_build_library_name }} --out-dir target/wasm32-unknown-unknown/web-release --target web target/wasm32-unknown-unknown/web-release/${{ env.cargo_build_library_name }}.wasm
           wasm-opt --strip-debug -Os -o target/wasm32-unknown-unknown/web-release/${{ env.cargo_build_library_name }}_bg.wasm target/wasm32-unknown-unknown/web-release/${{ env.cargo_build_library_name }}_bg.wasm
-          mv 'target/bevy_web/web-release/${{ env.cargo_build_library_name }}' '${{ env.app }}'
+          mv '${{ env.app }}'/build
+          mv 'target/wasm32-unknown-unknown/web-release/${{ env.cargo_build_library_name }}_bg.wasm' '${{ env.app }}'/build
+          mv 'target/wasm32-unknown-unknown/web-release/${{ env.cargo_build_library_name }}.js' '${{ env.app }}'/build
 
       - name: Build and add binaries to app (non-Web)
         if: ${{ env.is_platform_enabled == 'true' && matrix.platform != 'web' && matrix.platform != 'web-lib' }}
@@ -265,7 +267,7 @@ jobs:
           fi
 
       - name: Add assets to app (non-Web)
-        if: ${{ env.is_platform_enabled == 'true' && matrix.platform != 'web' && matrix.platform != 'web-lib' }}
+        if: ${{ env.is_platform_enabled == 'true' && matrix.platform != 'web' }}
         run: cp -R ./'${{ env.assets_path }}' '${{ env.app }}' || true # Ignore error if assets folder does not exist.
 
       - name: Add metadata to app (macOS)

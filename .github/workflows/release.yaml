@@ -24,6 +24,10 @@ on:
         description: "Build for web"
         default: true
         type: boolean
+      build_lib_for_web:
+        description: "Build for web (library)"
+        default: true
+        type: boolean
       upload_to_github:
         description: "Upload to GitHub releases"
         default: true
@@ -45,7 +49,8 @@ concurrency:
 # Configure the release workflow by editing the following values.
 env:
   # The base filename of the binary produced by `cargo build`.
-  cargo_build_binary_name: char_motion_example
+  cargo_build_binary_name: char_motion
+  cargo_build_library_name: char_motion_example
 
   # The path to the assets directory.
   assets_path: assets
@@ -126,6 +131,11 @@ jobs:
             package_ext: .zip
             runner: ubuntu-latest
 
+          - platform: web-lib
+            targets: wasm32-unknown-unknown
+            package_ext: .zip
+            runner: ubuntu-latest
+
           - platform: linux
             targets: x86_64-unknown-linux-gnu
             package_ext: .zip
@@ -182,6 +192,7 @@ jobs:
           # Check if building for this platform is enabled.
           echo 'is_platform_enabled=${{
             (matrix.platform == 'web' && inputs.build_for_web) ||
+            (matrix.platform == 'web-lib' && inputs.build_lib_for_web) ||
             (matrix.platform == 'linux' && inputs.build_for_linux) ||
             (matrix.platform == 'windows' && inputs.build_for_windows) ||
             (matrix.platform == 'macos' && inputs.build_for_macos)
@@ -230,8 +241,18 @@ jobs:
           bevy build --locked --release --features='${{ matrix.features }}' --yes web --bundle
           mv 'target/bevy_web/web-release/${{ env.cargo_build_binary_name }}' '${{ env.app }}'
 
+      - name: Build and add web bundle to app (Web lib)
+        if: ${{ env.is_platform_enabled == 'true' && matrix.platform == 'web-lib' }}
+        run: |
+          cargo binstall --locked --no-confirm --force wasm-bindgen-cli
+          cargo binstall --locked --no-confirm --force wasm-opt
+          cargo build --config profile.web.inherits='"dev"' --no-default-features --profile web-release --target wasm32-unknown-unknown
+          wasm-bindgen --no-typescript --out-name ${{ env.cargo_build_library_name }} --out-dir target/wasm32-unknown-unknown/web-release --target web target/wasm32-unknown-unknown/web-release/${{ env.cargo_build_library_name }}.wasm
+          wasm-opt --strip-debug -Os -o target/wasm32-unknown-unknown/web-release/${{ env.cargo_build_library_name }}_bg.wasm target/wasm32-unknown-unknown/web-release/${{ env.cargo_build_library_name }}_bg.wasm
+          mv 'target/bevy_web/web-release/${{ env.cargo_build_binary_name }}' '${{ env.app }}'
+
       - name: Build and add binaries to app (non-Web)
-        if: ${{ env.is_platform_enabled == 'true' && matrix.platform != 'web' }}
+        if: ${{ env.is_platform_enabled == 'true' && matrix.platform != 'web' && matrix.platform != 'web-lib' }}
         run: |
           for target in ${{ matrix.targets }}; do
             bevy build --locked --release --target="${target}" --features='${{ matrix.features }}'
@@ -244,7 +265,7 @@ jobs:
           fi
 
       - name: Add assets to app (non-Web)
-        if: ${{ env.is_platform_enabled == 'true' && matrix.platform != 'web' }}
+        if: ${{ env.is_platform_enabled == 'true' && matrix.platform != 'web' && matrix.platform != 'web-lib' }}
         run: cp -R ./'${{ env.assets_path }}' '${{ env.app }}' || true # Ignore error if assets folder does not exist.
 
       - name: Add metadata to app (macOS)

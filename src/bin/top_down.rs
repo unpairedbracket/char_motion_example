@@ -6,5 +6,5 @@
 use bevy::prelude::*;
 
 pub fn main() -> AppExit {
-    char_motion_example::run_inner("Char Motion Example".to_string())
+    char_motion_example::run_top_down(500.0, 1.0, 5.0, 5.0)
 }

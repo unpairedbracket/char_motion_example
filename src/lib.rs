@@ -4,29 +4,129 @@
 #![cfg_attr(not(feature = "dev"), windows_subsystem = "windows")]
 
 pub mod asset_tracking;
-pub mod demo;
 #[cfg(feature = "dev")]
 pub mod dev_tools;
+pub mod level;
 pub mod menus;
 pub mod screens;
+pub mod side_scroll;
 pub mod theme;
+pub mod top_down;
 
 use bevy::{asset::AssetMetaCheck, prelude::*};
 use wasm_bindgen::prelude::wasm_bindgen;
 
 #[wasm_bindgen]
-pub fn run(name: String) {
-    run_inner(name);
+pub fn side_scroller(max_speed: f32, t_acc: f32, a_stop: f32, a_rev: f32) {
+    run_side_scroll(max_speed, t_acc, a_stop, a_rev);
 }
 
-pub fn run_inner(name: String) -> AppExit {
-    App::new().add_plugins(AppPlugin(name)).run()
+#[wasm_bindgen]
+pub fn top_down(max_speed: f32, t_acc: f32, a_stop: f32, a_rev: f32) {
+    run_top_down(max_speed, t_acc, a_stop, a_rev);
 }
 
-pub struct AppPlugin(String);
+pub fn run_side_scroll(max_speed: f32, t_acc: f32, a_stop: f32, a_rev: f32) -> AppExit {
+    App::new()
+        .add_plugins(AppPlugin {
+            mode: PlayMode::SideScroll,
+            params: MotionParameters::full(max_speed, t_acc, a_stop, a_rev),
+        })
+        .run()
+}
 
-#[derive(Resource)]
-pub struct InstanceName(String);
+pub fn run_side_scroll_basic() -> AppExit {
+    App::new()
+        .add_plugins(AppPlugin {
+            mode: PlayMode::SideScroll,
+            params: MotionParameters::basic(600.0, 1.0),
+        })
+        .run()
+}
+
+pub fn run_side_scroll_stop() -> AppExit {
+    App::new()
+        .add_plugins(AppPlugin {
+            mode: PlayMode::SideScroll,
+            params: MotionParameters::with_stopping(600.0, 1.0, 5.0),
+        })
+        .run()
+}
+
+pub fn run_side_scroll_reverse() -> AppExit {
+    App::new()
+        .add_plugins(AppPlugin {
+            mode: PlayMode::SideScroll,
+            params: MotionParameters::full(600.0, 1.0, 5.0, 5.0),
+        })
+        .run()
+}
+
+pub fn run_top_down(max_speed: f32, t_acc: f32, a_stop: f32, a_rev: f32) -> AppExit {
+    App::new()
+        .add_plugins(AppPlugin {
+            mode: PlayMode::TopDown,
+            params: MotionParameters::basic(600.0, 1.0),
+        })
+        .run()
+}
+
+#[derive(Clone, Copy, Resource)]
+pub enum PlayMode {
+    TopDown,
+    SideScroll,
+}
+
+#[derive(Clone, Copy, Resource)]
+pub struct MotionParameters {
+    max_speed: f32,
+    alpha_rev: f32,
+    alpha_stop: f32,
+    t_acc: f32,
+}
+
+impl MotionParameters {
+    pub fn basic(max_speed: f32, t_acc: f32) -> Self {
+        Self {
+            max_speed,
+            t_acc,
+            alpha_rev: 1.0,
+            alpha_stop: 1.0,
+        }
+    }
+
+    pub fn with_stopping(max_speed: f32, t_acc: f32, alpha_stop: f32) -> Self {
+        Self {
+            max_speed,
+            t_acc,
+            alpha_rev: 1.0,
+            alpha_stop,
+        }
+    }
+
+    pub fn full(max_speed: f32, t_acc: f32, alpha_stop: f32, alpha_rev: f32) -> Self {
+        Self {
+            max_speed,
+            t_acc,
+            alpha_rev,
+            alpha_stop,
+        }
+    }
+}
+
+impl std::fmt::Display for PlayMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PlayMode::TopDown => write!(f, "Top Down"),
+            PlayMode::SideScroll => write!(f, "Side Scroll"),
+        }
+    }
+}
+
+pub struct AppPlugin {
+    mode: PlayMode,
+    params: MotionParameters,
+}
 
 impl Plugin for AppPlugin {
     fn build(&self, app: &mut App) {
@@ -42,7 +142,7 @@ impl Plugin for AppPlugin {
                 })
                 .set(WindowPlugin {
                     primary_window: Window {
-                        title: self.0.clone(),
+                        title: "character motion example".into(),
                         fit_canvas_to_parent: true,
                         ..default()
                     }
@@ -54,13 +154,17 @@ impl Plugin for AppPlugin {
         // Add other plugins.
         app.add_plugins((
             asset_tracking::plugin,
-            demo::plugin,
             #[cfg(feature = "dev")]
             dev_tools::plugin,
             menus::plugin,
             screens::plugin,
             theme::plugin,
         ));
+
+        match self.mode {
+            PlayMode::TopDown => app.add_plugins(top_down::plugin),
+            PlayMode::SideScroll => app.add_plugins(side_scroll::plugin),
+        };
 
         // Order new `AppSystems` variants by adding them here:
         app.configure_sets(
@@ -80,7 +184,8 @@ impl Plugin for AppPlugin {
         // Spawn the main camera.
         app.add_systems(Startup, spawn_camera);
 
-        app.insert_resource(InstanceName(self.0.clone()));
+        app.insert_resource(self.mode);
+        app.insert_resource(self.params);
     }
 }
 

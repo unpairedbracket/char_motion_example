@@ -3,28 +3,29 @@
 use bevy::prelude::*;
 
 use crate::{
-    InstanceName, asset_tracking::ResourceHandles, menus::Menu, screens::Screen, theme::widget,
+    PlayMode, asset_tracking::ResourceHandles, menus::Menu, screens::Screen, theme::widget,
 };
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Menu::Main), spawn_main_menu);
 }
 
-fn spawn_main_menu(mut commands: Commands, name: Res<InstanceName>) {
+fn spawn_main_menu(mut commands: Commands, mode: Res<PlayMode>) {
     commands.spawn((
         widget::ui_root("Main Menu"),
         GlobalZIndex(2),
         StateScoped(Menu::Main),
         #[cfg(not(target_family = "wasm"))]
         children![
-            widget::button(format!("Play {}", name.0), enter_loading_or_gameplay_screen),
+            widget::button(format!("Play {}", *mode), enter_loading_or_gameplay_screen),
             widget::button("Credits", open_credits_menu),
             widget::button("Exit", exit_app),
         ],
         #[cfg(target_family = "wasm")]
         children![
-            widget::button(format!("Play {}", name.0), enter_loading_or_gameplay_screen),
+            widget::button(format!("Play {}", *mode), enter_loading_or_gameplay_screen),
             widget::button("Credits", open_credits_menu),
+            widget::button("Exit", exit_app),
         ],
     ));
 }
@@ -45,7 +46,7 @@ fn open_credits_menu(_: Trigger<Pointer<Click>>, mut next_menu: ResMut<NextState
     next_menu.set(Menu::Credits);
 }
 
-#[cfg(not(target_family = "wasm"))]
+// #[cfg(not(target_family = "wasm"))]
 fn exit_app(_: Trigger<Pointer<Click>>, mut app_exit: EventWriter<AppExit>) {
     app_exit.write(AppExit::Success);
 }

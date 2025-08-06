@@ -36,7 +36,7 @@ fn apply_movement(
             let transverse_velocity = controller.velocity - longitudinal_velocity;
             let alpha_longitudinal = match longitudinal_speed {
                 vel if vel < 0.0 => params.alpha_rev,
-                vel if vel == 0.0 => params.alpha_stop,
+                0.0 => params.alpha_stop,
                 vel if vel > 0.0 => 1.0,
                 _ => 1.0,
             };
@@ -46,7 +46,7 @@ fn apply_movement(
                 transverse_velocity / (1.0 + params.alpha_turn * scaled_timestep);
             controller.velocity = new_long_velocity + new_trans_velocity;
         } else {
-            controller.velocity = controller.velocity / (1.0 + params.alpha_stop * scaled_timestep)
+            controller.velocity /= 1.0 + params.alpha_stop * scaled_timestep;
         }
 
         transform.translation += controller.velocity.extend(0.0) * time.delta_secs();

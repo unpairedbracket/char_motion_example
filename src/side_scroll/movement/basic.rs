@@ -41,7 +41,7 @@ pub(super) fn apply_movement(
         let scaled_timestep = time.delta_secs() / params.t_acc;
         let alpha = match target_velocity * controller.velocity.signum() {
             vel if vel < 0.0 => params.alpha_rev,
-            vel if vel == 0.0 => params.alpha_stop,
+            0.0 => params.alpha_stop,
             vel if vel > 0.0 => 1.0,
             _ => 1.0,
         };

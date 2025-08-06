@@ -246,7 +246,7 @@ jobs:
         run: |
           cargo binstall --locked --no-confirm --force wasm-bindgen-cli
           cargo binstall --locked --no-confirm --force wasm-opt
-          cargo build --config profile.web.inherits='"dev"' --no-default-features --profile web-release --target wasm32-unknown-unknown
+          cargo build --lib --config profile.web.inherits='"dev"' --no-default-features --profile web-release --target wasm32-unknown-unknown
           wasm-bindgen --no-typescript --out-name ${{ env.cargo_build_library_name }} --out-dir target/wasm32-unknown-unknown/web-release --target web target/wasm32-unknown-unknown/web-release/${{ env.cargo_build_library_name }}.wasm
           wasm-opt --strip-debug -Os -o target/wasm32-unknown-unknown/web-release/${{ env.cargo_build_library_name }}_bg.wasm target/wasm32-unknown-unknown/web-release/${{ env.cargo_build_library_name }}_bg.wasm
           mkdir -p '${{ env.app }}'/build

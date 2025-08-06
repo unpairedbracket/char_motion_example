@@ -22,8 +22,8 @@ pub fn side_scroller(max_speed: f32, t_acc: f32, a_stop: f32, a_rev: f32) {
 }
 
 #[wasm_bindgen]
-pub fn top_down(max_speed: f32, t_acc: f32, a_stop: f32, a_rev: f32) {
-    run_top_down(max_speed, t_acc, a_stop, a_rev);
+pub fn top_down(max_speed: f32, t_acc: f32, a_stop: f32, a_turn: f32) {
+    run_top_down(max_speed, t_acc, a_stop, a_turn);
 }
 
 pub fn run_side_scroll(max_speed: f32, t_acc: f32, a_stop: f32, a_rev: f32) -> AppExit {
@@ -62,11 +62,13 @@ pub fn run_side_scroll_reverse() -> AppExit {
         .run()
 }
 
-pub fn run_top_down(max_speed: f32, t_acc: f32, a_stop: f32, a_rev: f32) -> AppExit {
+pub fn run_top_down(max_speed: f32, t_acc: f32, a_stop: f32, a_turn: f32) -> AppExit {
     App::new()
         .add_plugins(AppPlugin {
             mode: PlayMode::TopDown,
-            params: MotionParameters::basic(600.0, 1.0),
+            params: MotionParameters::full_with_separate_turn(
+                max_speed, t_acc, a_stop, a_stop, a_turn,
+            ),
         })
         .run()
 }
@@ -82,6 +84,7 @@ pub struct MotionParameters {
     max_speed: f32,
     alpha_rev: f32,
     alpha_stop: f32,
+    alpha_turn: f32,
     t_acc: f32,
 }
 
@@ -92,6 +95,7 @@ impl MotionParameters {
             t_acc,
             alpha_rev: 1.0,
             alpha_stop: 1.0,
+            alpha_turn: 1.0,
         }
     }
 
@@ -101,6 +105,7 @@ impl MotionParameters {
             t_acc,
             alpha_rev: 1.0,
             alpha_stop,
+            alpha_turn: 1.0,
         }
     }
 
@@ -110,6 +115,23 @@ impl MotionParameters {
             t_acc,
             alpha_rev,
             alpha_stop,
+            alpha_turn: alpha_rev,
+        }
+    }
+
+    pub fn full_with_separate_turn(
+        max_speed: f32,
+        t_acc: f32,
+        alpha_stop: f32,
+        alpha_rev: f32,
+        alpha_turn: f32,
+    ) -> Self {
+        Self {
+            max_speed,
+            t_acc,
+            alpha_rev,
+            alpha_stop,
+            alpha_turn,
         }
     }
 }

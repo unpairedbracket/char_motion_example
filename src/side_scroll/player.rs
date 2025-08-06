@@ -1,5 +1,3 @@
-//! Player-specific behavior.
-
 use bevy::{color::palettes::tailwind, prelude::*};
 
 use crate::{
@@ -10,7 +8,6 @@ use crate::{
 pub(super) fn plugin(app: &mut App) {
     app.register_type::<Player>();
 
-    // Record directional input as movement controls.
     app.add_systems(
         Update,
         record_player_directional_input
@@ -19,7 +16,6 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-/// The player character.
 pub fn player(meshes: &mut Assets<Mesh>, mats: &mut Assets<ColorMaterial>) -> impl Bundle {
     let mesh = Capsule2d::new(10.0, 30.0).mesh().build();
     let player_mesh = meshes.add(mesh);
@@ -44,7 +40,6 @@ fn record_player_directional_input(
     input: Res<ButtonInput<KeyCode>>,
     mut intent_query: Query<&mut MovementIntent, With<Player>>,
 ) {
-    // Collect directional input.
     let mut intent = Vec2::ZERO;
 
     if input.pressed(KeyCode::KeyA) || input.pressed(KeyCode::ArrowLeft) {
@@ -54,11 +49,8 @@ fn record_player_directional_input(
         intent.x += 1.0;
     }
 
-    // Normalize intent so that diagonal movement is the same speed as horizontal / vertical.
-    // This should be omitted if the input comes from an analog stick instead.
     let intent = intent.normalize_or_zero();
 
-    // Apply movement intent to controllers.
     for mut intent_instance in &mut intent_query {
         intent_instance.0 = intent;
     }

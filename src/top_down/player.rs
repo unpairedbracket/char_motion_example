@@ -4,6 +4,7 @@ use bevy::{color::palettes::tailwind, prelude::*};
 
 use crate::{
     AppSystems, PausableSystems,
+    side_scroll::movement::MovementIntent,
     top_down::movement::{MovementController, ScreenWrap},
 };
 
@@ -20,11 +21,7 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 /// The player character.
-pub fn player(
-    max_speed: f32,
-    meshes: &mut Assets<Mesh>,
-    mats: &mut Assets<ColorMaterial>,
-) -> impl Bundle {
+pub fn player(meshes: &mut Assets<Mesh>, mats: &mut Assets<ColorMaterial>) -> impl Bundle {
     let mesh = Circle::new(10.0).mesh().build();
     let player_mesh = meshes.add(mesh);
     let player_color = mats.add(Color::from(tailwind::BLUE_400));
@@ -35,21 +32,18 @@ pub fn player(
         Mesh2d(player_mesh),
         MeshMaterial2d(player_color),
         Transform::default(),
-        MovementController {
-            max_speed,
-            ..default()
-        },
         ScreenWrap,
     )
 }
 
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Default, Reflect)]
 #[reflect(Component)]
+#[require(MovementController)]
 struct Player;
 
 fn record_player_directional_input(
     input: Res<ButtonInput<KeyCode>>,
-    mut controller_query: Query<&mut MovementController, With<Player>>,
+    mut intent_query: Query<&mut MovementIntent, With<Player>>,
 ) {
     // Collect directional input.
     let mut intent = Vec2::ZERO;
@@ -71,7 +65,7 @@ fn record_player_directional_input(
     let intent = intent.normalize_or_zero();
 
     // Apply movement intent to controllers.
-    for mut controller in &mut controller_query {
-        controller.intent = intent;
+    for mut intent_instance in &mut intent_query {
+        intent_instance.0 = intent;
     }
 }

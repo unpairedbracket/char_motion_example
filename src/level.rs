@@ -25,11 +25,7 @@ pub fn spawn_level(
             ),),]);
         }
         PlayMode::TopDown => {
-            player.insert(children![top_down::player::player(
-                400.0,
-                &mut meshes,
-                &mut mats
-            ),]);
+            player.insert(children![top_down::player::player(&mut meshes, &mut mats),]);
         }
     };
 }

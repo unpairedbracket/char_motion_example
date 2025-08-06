@@ -139,13 +139,13 @@
         // `bevy_app.js` with the name of the generated JS entrypoint. If you copy this file and
         // customize it, you will need to manually change the name. For more information, please see
         // <https://thebevyflock.github.io/bevy_cli/cli/web/default-index-html.html>!
-        import init, { side_scroller } from "./build/char_motion_example.js";
+        import init, { top_down } from "./build/char_motion_example.js";
 
         async function run_game() {
             document.getElementById("loading-screen").classList.add("spin")
             try {
                 let wasm = await init();
-                side_scroller(500, 1, 5, 1);
+                top_down(1000, 10, 1, 100);
             } catch (error) {
                 if (
                     !error.message.startsWith(

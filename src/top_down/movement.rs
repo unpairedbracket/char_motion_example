@@ -1,21 +1,6 @@
-//! Handle player input and translate it into movement through a character
-//! controller. A character controller is the collection of systems that govern
-//! the movement of characters.
-//!
-//! In our case, the character controller has the following logic:
-//! - Set [`MovementController`] intent based on directional keyboard input.
-//!   This is done in the `player` module, as it is specific to the player
-//!   character.
-//! - Apply movement based on [`MovementController`] intent and maximum speed.
-//! - Wrap the character within the window.
-//!
-//! Note that the implementation used here is limited for demonstration
-//! purposes. If you want to move the player in a smoother way,
-//! consider using a [fixed timestep](https://github.com/bevyengine/bevy/blob/main/examples/movement/physics_in_fixed_timestep.rs).
-
 use bevy::{prelude::*, window::PrimaryWindow};
 
-use crate::{AppSystems, PausableSystems};
+use crate::{AppSystems, MotionParameters, PausableSystems, side_scroll::movement::MovementIntent};
 
 pub(super) fn plugin(app: &mut App) {
     app.register_type::<MovementController>();
@@ -30,37 +15,41 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-/// These are the movement parameters for our character controller.
-/// For now, this is only used for a single player, but it could power NPCs or
-/// other players as well.
-#[derive(Component, Reflect)]
+#[derive(Component, Reflect, Default)]
 #[reflect(Component)]
+#[require(MovementIntent)]
 pub struct MovementController {
-    /// The direction the character wants to move in.
-    pub intent: Vec2,
-
-    /// Maximum speed in world units per second.
-    /// 1 world unit = 1 pixel when using the default 2D camera and no physics engine.
-    pub max_speed: f32,
-}
-
-impl Default for MovementController {
-    fn default() -> Self {
-        Self {
-            intent: Vec2::ZERO,
-            // 400 pixels per second is a nice default, but we can still vary this per character.
-            max_speed: 400.0,
-        }
-    }
+    velocity: Vec2,
 }
 
 fn apply_movement(
     time: Res<Time>,
-    mut movement_query: Query<(&MovementController, &mut Transform)>,
+    mut movement_query: Query<(&mut MovementController, &MovementIntent, &mut Transform)>,
+    params: Res<MotionParameters>,
 ) {
-    for (controller, mut transform) in &mut movement_query {
-        let velocity = controller.max_speed * controller.intent;
-        transform.translation += velocity.extend(0.0) * time.delta_secs();
+    for (mut controller, intent, mut transform) in &mut movement_query {
+        let scaled_timestep = time.delta_secs() / params.t_acc;
+        if let Some(intent_direction) = intent.0.try_normalize() {
+            let target_velocity = params.max_speed * intent.0;
+            let longitudinal_speed = intent_direction.dot(controller.velocity);
+            let longitudinal_velocity = intent_direction * longitudinal_speed;
+            let transverse_velocity = controller.velocity - longitudinal_velocity;
+            let alpha_longitudinal = match longitudinal_speed {
+                vel if vel < 0.0 => params.alpha_rev,
+                vel if vel == 0.0 => params.alpha_stop,
+                vel if vel > 0.0 => 1.0,
+                _ => 1.0,
+            };
+            let new_long_velocity = (longitudinal_velocity + scaled_timestep * target_velocity)
+                / (1.0 + alpha_longitudinal * scaled_timestep);
+            let new_trans_velocity =
+                transverse_velocity / (1.0 + params.alpha_turn * scaled_timestep);
+            controller.velocity = new_long_velocity + new_trans_velocity;
+        } else {
+            controller.velocity = controller.velocity / (1.0 + params.alpha_stop * scaled_timestep)
+        }
+
+        transform.translation += controller.velocity.extend(0.0) * time.delta_secs();
     }
 }
 

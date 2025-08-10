@@ -42,6 +42,7 @@ fn apply_movement(
             };
             let new_long_velocity = (longitudinal_velocity + scaled_timestep * target_velocity)
                 / (1.0 + alpha_longitudinal * scaled_timestep);
+
             let new_trans_velocity =
                 transverse_velocity / (1.0 + params.alpha_turn * scaled_timestep);
             controller.velocity = new_long_velocity + new_trans_velocity;

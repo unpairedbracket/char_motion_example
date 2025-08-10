@@ -145,7 +145,7 @@
             document.getElementById("loading-screen").classList.add("spin")
             try {
                 let wasm = await init();
-                top_down(1000, 1, 5, 5, 5);
+                top_down(1000, 10, 1, 1, 50);
             } catch (error) {
                 if (
                     !error.message.startsWith(

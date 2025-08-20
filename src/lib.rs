@@ -13,7 +13,7 @@ pub mod side_scroll;
 pub mod theme;
 pub mod top_down;
 
-use bevy::{asset::AssetMetaCheck, prelude::*};
+use bevy::{asset::AssetMetaCheck, prelude::*, render::camera::ScalingMode};
 use wasm_bindgen::prelude::wasm_bindgen;
 
 #[wasm_bindgen]
@@ -234,5 +234,14 @@ struct Pause(pub bool);
 struct PausableSystems;
 
 fn spawn_camera(mut commands: Commands) {
-    commands.spawn((Name::new("Camera"), Camera2d));
+    commands.spawn((
+        Name::new("Camera"),
+        Camera2d,
+        Projection::Orthographic(OrthographicProjection {
+            scaling_mode: ScalingMode::FixedHorizontal {
+                viewport_width: 2000.0,
+            },
+            ..OrthographicProjection::default_2d()
+        }),
+    ));
 }

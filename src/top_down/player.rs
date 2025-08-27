@@ -1,17 +1,14 @@
-//! Player-specific behavior.
-
 use bevy::{color::palettes::tailwind, prelude::*};
 
 use crate::{
     AppSystems, PausableSystems,
-    side_scroll::movement::MovementIntent,
-    top_down::movement::{MovementController, ScreenWrap},
+    player::{self, MovementIntent, Player},
+    top_down::movement::MovementController,
 };
 
 pub(super) fn plugin(app: &mut App) {
-    app.register_type::<Player>();
+    app.add_plugins(player::plugin);
 
-    // Record directional input as movement controls.
     app.add_systems(
         Update,
         record_player_directional_input
@@ -20,7 +17,6 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-/// The player character.
 pub fn player(meshes: &mut Assets<Mesh>, mats: &mut Assets<ColorMaterial>) -> impl Bundle {
     let mesh = Circle::new(10.0).mesh().build();
     let player_mesh = meshes.add(mesh);
@@ -29,17 +25,12 @@ pub fn player(meshes: &mut Assets<Mesh>, mats: &mut Assets<ColorMaterial>) -> im
     (
         Name::new("Player"),
         Player,
+        MovementController::default(),
         Mesh2d(player_mesh),
         MeshMaterial2d(player_color),
         Transform::default(),
-        ScreenWrap,
     )
 }
-
-#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Default, Reflect)]
-#[reflect(Component)]
-#[require(MovementController)]
-struct Player;
 
 fn record_player_directional_input(
     input: Res<ButtonInput<KeyCode>>,

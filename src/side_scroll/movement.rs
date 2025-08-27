@@ -1,17 +1,17 @@
-pub mod basic;
+use bevy::prelude::*;
 
-use bevy::{prelude::*, window::PrimaryWindow};
-
-use crate::{AppSystems, PausableSystems};
+use crate::{
+    AppSystems, MotionParameters, PausableSystems,
+    player::{MovementIntent, apply_screen_wrap},
+};
 
 pub(super) fn plugin(app: &mut App) {
-    app.register_type::<ScreenWrap>();
-
-    app.add_plugins(basic::plugin);
+    app.register_type::<BasicMovementController>();
 
     app.add_systems(
         Update,
-        apply_screen_wrap
+        apply_movement
+            .before(apply_screen_wrap)
             .in_set(AppSystems::Update)
             .in_set(PausableSystems),
     );
@@ -19,21 +19,32 @@ pub(super) fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
-pub struct MovementIntent(pub Vec2);
+#[require(MovementIntent)]
+pub struct BasicMovementController {
+    pub velocity: f32,
+}
 
-#[derive(Component, Reflect)]
-#[reflect(Component)]
-pub struct ScreenWrap;
-
-fn apply_screen_wrap(
-    window: Single<&Window, With<PrimaryWindow>>,
-    mut wrap_query: Query<&mut Transform, With<ScreenWrap>>,
+pub(super) fn apply_movement(
+    time: Res<Time>,
+    mut movement_query: Query<(
+        &mut BasicMovementController,
+        &MovementIntent,
+        &mut Transform,
+    )>,
+    params: Res<MotionParameters>,
 ) {
-    let size = window.size(); // + 256.0;
-    let half_size = size / 2.0;
-    for mut transform in &mut wrap_query {
-        let position = transform.translation.xy();
-        let wrapped = (position + half_size).rem_euclid(size) - half_size;
-        transform.translation = wrapped.extend(transform.translation.z);
+    for (mut controller, intent, mut transform) in &mut movement_query {
+        let target_velocity = params.max_speed * intent.0.x;
+        let scaled_timestep = time.delta_secs() / params.t_acc;
+        let alpha = match target_velocity * controller.velocity.signum() {
+            vel if vel < 0.0 => params.alpha_rev,
+            0.0 => params.alpha_stop,
+            vel if vel > 0.0 => 1.0,
+            _ => 1.0,
+        };
+        controller.velocity = (controller.velocity + scaled_timestep * target_velocity)
+            / (1.0 + alpha * scaled_timestep);
+
+        transform.translation += controller.velocity * Vec3::X * time.delta_secs();
     }
 }

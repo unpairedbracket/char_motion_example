@@ -8,6 +8,7 @@ pub mod asset_tracking;
 pub mod dev_tools;
 pub mod level;
 pub mod menus;
+pub mod player;
 pub mod screens;
 pub mod side_scroll;
 pub mod theme;
@@ -239,7 +240,7 @@ fn spawn_camera(mut commands: Commands) {
         Camera2d,
         Projection::Orthographic(OrthographicProjection {
             scaling_mode: ScalingMode::FixedHorizontal {
-                viewport_width: 2000.0,
+                viewport_width: 1000.0,
             },
             ..OrthographicProjection::default_2d()
         }),

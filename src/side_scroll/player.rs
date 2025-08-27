@@ -2,11 +2,12 @@ use bevy::{color::palettes::tailwind, prelude::*};
 
 use crate::{
     AppSystems, PausableSystems,
-    side_scroll::movement::{MovementIntent, ScreenWrap, basic::BasicMovementController},
+    player::{self, MovementIntent, Player},
+    side_scroll::movement::BasicMovementController,
 };
 
 pub(super) fn plugin(app: &mut App) {
-    app.register_type::<Player>();
+    app.add_plugins(player::plugin);
 
     app.add_systems(
         Update,
@@ -24,17 +25,12 @@ pub fn player(meshes: &mut Assets<Mesh>, mats: &mut Assets<ColorMaterial>) -> im
     (
         Name::new("Player"),
         Player,
+        BasicMovementController::default(),
         Mesh2d(player_mesh),
         MeshMaterial2d(player_color),
         Transform::default(),
-        ScreenWrap,
     )
 }
-
-#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Default, Reflect)]
-#[reflect(Component)]
-#[require(BasicMovementController)]
-struct Player;
 
 fn record_player_directional_input(
     input: Res<ButtonInput<KeyCode>>,

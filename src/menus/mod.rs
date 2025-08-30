@@ -1,7 +1,5 @@
 //! The game's menus and transitions between them.
 
-mod credits;
-mod main;
 mod pause;
 
 use bevy::prelude::*;
@@ -9,7 +7,7 @@ use bevy::prelude::*;
 pub(super) fn plugin(app: &mut App) {
     app.init_state::<Menu>();
 
-    app.add_plugins((credits::plugin, main::plugin, pause::plugin));
+    app.add_plugins((pause::plugin,));
 }
 
 #[derive(States, Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
@@ -17,7 +15,5 @@ pub(super) fn plugin(app: &mut App) {
 pub enum Menu {
     #[default]
     None,
-    Main,
-    Credits,
     Pause,
 }

@@ -1,17 +1,12 @@
 use bevy::{prelude::*, window::PrimaryWindow};
 
-use crate::{AppSystems, PausableSystems};
+use crate::AppSystems;
 
 pub(super) fn plugin(app: &mut App) {
     app.register_type::<Player>();
     app.register_type::<ScreenWrap>();
 
-    app.add_systems(
-        Update,
-        apply_screen_wrap
-            .in_set(AppSystems::Update)
-            .in_set(PausableSystems),
-    );
+    app.add_systems(Update, apply_screen_wrap.in_set(AppSystems::Update));
 }
 
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Default, Reflect)]

@@ -1,7 +1,7 @@
 use bevy::{color::palettes::tailwind, prelude::*};
 
 use crate::{
-    AppSystems, PausableSystems,
+    AppSystems,
     player::{self, MovementIntent, Player},
     top_down::movement::MovementController,
 };
@@ -11,9 +11,7 @@ pub(super) fn plugin(app: &mut App) {
 
     app.add_systems(
         Update,
-        record_player_directional_input
-            .in_set(AppSystems::RecordInput)
-            .in_set(PausableSystems),
+        record_player_directional_input.in_set(AppSystems::RecordInput),
     );
 }
 

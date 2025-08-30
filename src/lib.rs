@@ -7,7 +7,6 @@ pub mod asset_tracking;
 #[cfg(feature = "dev")]
 pub mod dev_tools;
 pub mod level;
-pub mod menus;
 pub mod player;
 pub mod screens;
 pub mod side_scroll;
@@ -179,7 +178,6 @@ impl Plugin for AppPlugin {
             asset_tracking::plugin,
             #[cfg(feature = "dev")]
             dev_tools::plugin,
-            menus::plugin,
             screens::plugin,
             theme::plugin,
         ));
@@ -199,10 +197,6 @@ impl Plugin for AppPlugin {
             )
                 .chain(),
         );
-
-        // Set up the `Pause` state.
-        app.init_state::<Pause>();
-        app.configure_sets(Update, PausableSystems.run_if(in_state(Pause(false))));
 
         // Spawn the main camera.
         app.add_systems(Startup, spawn_camera);
@@ -224,15 +218,6 @@ enum AppSystems {
     /// Do everything else (consider splitting this into further variants).
     Update,
 }
-
-/// Whether or not the game is paused.
-#[derive(States, Copy, Clone, Eq, PartialEq, Hash, Debug, Default)]
-#[states(scoped_entities)]
-struct Pause(pub bool);
-
-/// A system set for systems that shouldn't run while the game is paused.
-#[derive(SystemSet, Copy, Clone, Eq, PartialEq, Hash, Debug)]
-struct PausableSystems;
 
 fn spawn_camera(mut commands: Commands) {
     commands.spawn((

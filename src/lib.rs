@@ -16,21 +16,32 @@ pub mod top_down;
 use bevy::{asset::AssetMetaCheck, prelude::*};
 use wasm_bindgen::prelude::wasm_bindgen;
 
-use crate::side_scroll::level::Ground;
-
 #[wasm_bindgen]
 pub fn side_scroller(max_speed: f32, t_acc: f32, a_stop: f32, a_rev: f32) {
-    run_side_scroll(max_speed, t_acc, a_stop, a_rev, Ground::FlatPeriodic);
+    run_side_scroll(
+        max_speed,
+        t_acc,
+        a_stop,
+        a_rev,
+        side_scroll::Ground::FlatPeriodic,
+    );
 }
 
 #[wasm_bindgen]
 pub fn side_scroller_hills(max_speed: f32, t_acc: f32, a_stop: f32, a_rev: f32) {
-    run_side_scroll(max_speed, t_acc, a_stop, a_rev, Ground::Hills);
+    run_side_scroll(max_speed, t_acc, a_stop, a_rev, side_scroll::Ground::Hills);
 }
 
 #[wasm_bindgen]
 pub fn top_down(max_speed: f32, t_acc: f32, a_stop: f32, a_rev: f32, a_turn: f32) {
-    run_top_down(max_speed, t_acc, a_stop, a_rev, a_turn);
+    run_top_down(
+        max_speed,
+        t_acc,
+        a_stop,
+        a_rev,
+        a_turn,
+        top_down::Ground::FlatPeriodic,
+    );
 }
 
 pub fn run_side_scroll(
@@ -38,7 +49,7 @@ pub fn run_side_scroll(
     t_acc: f32,
     a_stop: f32,
     a_rev: f32,
-    ground: Ground,
+    ground: side_scroll::Ground,
 ) -> AppExit {
     App::new()
         .add_plugins(AppPlugin {
@@ -49,7 +60,14 @@ pub fn run_side_scroll(
         .run()
 }
 
-pub fn run_top_down(max_speed: f32, t_acc: f32, a_stop: f32, a_rev: f32, a_turn: f32) -> AppExit {
+pub fn run_top_down(
+    max_speed: f32,
+    t_acc: f32,
+    a_stop: f32,
+    a_rev: f32,
+    a_turn: f32,
+    ground: top_down::Ground,
+) -> AppExit {
     App::new()
         .add_plugins(AppPlugin {
             mode: PlayMode::TopDown,
@@ -57,6 +75,7 @@ pub fn run_top_down(max_speed: f32, t_acc: f32, a_stop: f32, a_rev: f32, a_turn:
                 max_speed, t_acc, a_stop, a_rev, a_turn,
             ),
         })
+        .insert_resource(ground)
         .run()
 }
 

@@ -1,4 +1,4 @@
-use bevy::{color::palettes::tailwind, prelude::*, render::camera::ScalingMode};
+use bevy::{color::palettes::tailwind, prelude::*};
 
 use crate::{
     player::{Player, TrackingCameras},
@@ -108,20 +108,6 @@ pub fn move_along_ground(
             }
         }
         Ground::Loops => todo!(),
-    }
-}
-
-pub fn set_proj(mut cameras: Query<&mut Projection>) {
-    for mut proj in &mut cameras {
-        match &mut *proj {
-            Projection::Orthographic(proj) => {
-                warn!("{:?}", proj.scaling_mode);
-                proj.scaling_mode = ScalingMode::FixedHorizontal {
-                    viewport_width: 1000.0,
-                };
-            }
-            _ => {}
-        }
     }
 }
 

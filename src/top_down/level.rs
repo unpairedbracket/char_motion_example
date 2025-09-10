@@ -1,6 +1,6 @@
 use std::f32::consts::PI;
 
-use bevy::{color::palettes::tailwind, prelude::*, render::camera::ScalingMode};
+use bevy::{color::palettes::tailwind, prelude::*};
 
 use crate::{
     player::{Player, TrackingCameras},
@@ -12,7 +12,7 @@ pub fn plugin(app: &mut App) {
 
     app.add_systems(
         Update,
-        (swap_ground, move_along_ground, move_camera)
+        (swap_ground, move_along_ground, move_camera, draw_ground)
             .chain()
             .after(movement::apply_movement),
     );
@@ -40,27 +40,17 @@ pub fn move_along_ground(mut objects: Query<&mut Transform>, ground: Res<Ground>
             for mut tf in &mut objects {
                 let kx = 2.0 * PI / 500.0;
                 let ky = 2.0 * PI / 2000.0;
+                let h0 = 100.0;
 
-                let h = (kx * tf.translation.x).cos() * (ky * tf.translation.y).cos();
+                let h = h0 * (kx * tf.translation.x).cos() * (ky * tf.translation.y).cos();
                 tf.translation.z = h;
 
-                let dz_dx = kx * (kx * tf.translation.x).sin() * (ky * tf.translation.y).cos();
-                let dz_dy = ky * (ky * tf.translation.y).sin() * (kx * tf.translation.x).cos();
-            }
-        }
-    }
-}
+                let dz_dx = kx * h0 * (kx * tf.translation.x).sin() * (ky * tf.translation.y).cos();
+                let dz_dy = ky * h0 * (ky * tf.translation.y).sin() * (kx * tf.translation.x).cos();
 
-pub fn set_proj(mut cameras: Query<&mut Projection>) {
-    for mut proj in &mut cameras {
-        match &mut *proj {
-            Projection::Orthographic(proj) => {
-                warn!("{:?}", proj.scaling_mode);
-                proj.scaling_mode = ScalingMode::FixedHorizontal {
-                    viewport_width: 1000.0,
-                };
+                let normal = Dir3::from_xyz(-dz_dx, -dz_dy, 1.0).unwrap();
+                tf.rotation = Quat::from_rotation_arc(Vec3::Z, *normal);
             }
-            _ => {}
         }
     }
 }
@@ -144,64 +134,20 @@ pub fn move_camera(
     }
 }
 
-// pub fn draw_ground(
-//     players: Query<(&Transform), With<Player>>,
-//     ground: Res<Ground>,
-//     mut gizmo: Gizmos,
-// ) {
-//     match *ground {
-//         Ground::FlatPeriodic => {
-//             for (tform, _) in &players {
-//                 let tf2 = tform.translation.xy();
-//                 let draw_distance = 500.0;
-//                 gizmo.line_2d(
-//                     tf2 - draw_distance * Vec2::X,
-//                     tf2 + draw_distance * Vec2::X,
-//                     tailwind::BLUE_300,
-//                 );
-//             }
-//         }
-//         Ground::Hills => {
-//             let period_length: f32 = 1000.0;
-//             let max_height = 500.0;
-//             let h_squared = max_height * max_height;
-//             let period_arclength = (period_length * period_length + 4.0 * h_squared).sqrt();
-//             let excess = 0.5 * (period_arclength - period_length);
-//             let max_period = 4.0;
-//             for (_, arc_pos) in &players {
-//                 let period = arc_pos.0.div_euclid(period_arclength);
-//                 for draw_period in [period - 2., period - 1., period, period + 1., period + 2.] {
-//                     let period_folded = ((draw_period + max_period).rem_euclid(2.0 * max_period)
-//                         - max_period)
-//                         .abs();
-//                     let flat_fraction = period_folded / (max_period + 1.0);
-//                     // Flat length within the period is 25% at 0, 50% at top, 25% at zero
-//                     let total_flat_length = period_length * flat_fraction;
+pub fn draw_ground(
+    players: Query<&Transform, With<Player>>,
+    ground: Res<Ground>,
+    mut gizmo: Gizmos,
+) {
+    match *ground {
+        Ground::FlatPeriodic => {}
+        Ground::Hills => {
+            for tform in &players {
+                let pos = tform.translation.xy();
+                let norm = (tform.rotation * Vec3::Z).xy();
 
-//                     let current_max_height = (h_squared - total_flat_length * excess).sqrt();
-
-//                     let period_start = period_length * draw_period;
-
-//                     let slope_start = total_flat_length / 4.0;
-//                     let slope_end = period_length / 2.0 - slope_start;
-
-//                     let downslope_start = period_length / 2.0 + slope_start;
-//                     let downslope_end = period_length - slope_start;
-
-//                     let start_point = Vec2::new(period_start, 0.0);
-//                     let points = [
-//                         start_point,
-//                         start_point + slope_start * Vec2::X,
-//                         start_point + slope_end * Vec2::X + current_max_height * Vec2::Y,
-//                         start_point + downslope_start * Vec2::X + current_max_height * Vec2::Y,
-//                         start_point + downslope_end * Vec2::X,
-//                         start_point + period_length * Vec2::X,
-//                     ];
-
-//                     gizmo.linestrip_2d(points, tailwind::BLUE_300);
-//                 }
-//             }
-//         }
-//         Ground::Loops => todo!(),
-//     }
-// }
+                gizmo.arrow_2d(pos, pos + 100.0 * norm, tailwind::BLUE_300);
+            }
+        }
+    }
+}

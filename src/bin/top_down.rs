@@ -4,7 +4,8 @@
 #![cfg_attr(not(feature = "dev"), windows_subsystem = "windows")]
 
 use bevy::prelude::*;
+use char_motion_example::top_down::Ground;
 
 pub fn main() -> AppExit {
-    char_motion_example::run_top_down(500.0, 1.0, 5.0, 5.0, 5.0)
+    char_motion_example::run_top_down(500.0, 1.0, 5.0, 5.0, 5.0, Ground::FlatPeriodic)
 }

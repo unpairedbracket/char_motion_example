@@ -13,12 +13,19 @@ pub mod side_scroll;
 pub mod theme;
 pub mod top_down;
 
-use bevy::{asset::AssetMetaCheck, prelude::*, render::camera::ScalingMode};
+use bevy::{asset::AssetMetaCheck, prelude::*};
 use wasm_bindgen::prelude::wasm_bindgen;
+
+use crate::side_scroll::level::Ground;
 
 #[wasm_bindgen]
 pub fn side_scroller(max_speed: f32, t_acc: f32, a_stop: f32, a_rev: f32) {
-    run_side_scroll(max_speed, t_acc, a_stop, a_rev);
+    run_side_scroll(max_speed, t_acc, a_stop, a_rev, Ground::FlatPeriodic);
+}
+
+#[wasm_bindgen]
+pub fn side_scroller_hills(max_speed: f32, t_acc: f32, a_stop: f32, a_rev: f32) {
+    run_side_scroll(max_speed, t_acc, a_stop, a_rev, Ground::Hills);
 }
 
 #[wasm_bindgen]
@@ -26,39 +33,19 @@ pub fn top_down(max_speed: f32, t_acc: f32, a_stop: f32, a_rev: f32, a_turn: f32
     run_top_down(max_speed, t_acc, a_stop, a_rev, a_turn);
 }
 
-pub fn run_side_scroll(max_speed: f32, t_acc: f32, a_stop: f32, a_rev: f32) -> AppExit {
+pub fn run_side_scroll(
+    max_speed: f32,
+    t_acc: f32,
+    a_stop: f32,
+    a_rev: f32,
+    ground: Ground,
+) -> AppExit {
     App::new()
         .add_plugins(AppPlugin {
             mode: PlayMode::SideScroll,
             params: MotionParameters::full(max_speed, t_acc, a_stop, a_rev),
         })
-        .run()
-}
-
-pub fn run_side_scroll_basic() -> AppExit {
-    App::new()
-        .add_plugins(AppPlugin {
-            mode: PlayMode::SideScroll,
-            params: MotionParameters::basic(600.0, 1.0),
-        })
-        .run()
-}
-
-pub fn run_side_scroll_stop() -> AppExit {
-    App::new()
-        .add_plugins(AppPlugin {
-            mode: PlayMode::SideScroll,
-            params: MotionParameters::with_stopping(600.0, 1.0, 5.0),
-        })
-        .run()
-}
-
-pub fn run_side_scroll_reverse() -> AppExit {
-    App::new()
-        .add_plugins(AppPlugin {
-            mode: PlayMode::SideScroll,
-            params: MotionParameters::full(600.0, 1.0, 5.0, 5.0),
-        })
+        .insert_resource(ground)
         .run()
 }
 
@@ -86,6 +73,7 @@ pub struct MotionParameters {
     alpha_stop: f32,
     alpha_turn: f32,
     t_acc: f32,
+    gravity_strength: f32,
 }
 
 impl MotionParameters {
@@ -96,6 +84,7 @@ impl MotionParameters {
             alpha_rev: 1.0,
             alpha_stop: 1.0,
             alpha_turn: 1.0,
+            gravity_strength: 20.0,
         }
     }
 
@@ -106,6 +95,7 @@ impl MotionParameters {
             alpha_rev: 1.0,
             alpha_stop,
             alpha_turn: 1.0,
+            gravity_strength: 20.0,
         }
     }
 
@@ -116,6 +106,7 @@ impl MotionParameters {
             alpha_rev,
             alpha_stop,
             alpha_turn: alpha_rev,
+            gravity_strength: 20.0,
         }
     }
 
@@ -132,6 +123,7 @@ impl MotionParameters {
             alpha_rev,
             alpha_stop,
             alpha_turn,
+            gravity_strength: 20.0,
         }
     }
 }
@@ -199,7 +191,7 @@ impl Plugin for AppPlugin {
         );
 
         // Spawn the main camera.
-        app.add_systems(Startup, spawn_camera);
+        // app.add_systems(Startup, spawn_camera);
 
         app.insert_resource(self.mode);
         app.insert_resource(self.params);
@@ -219,15 +211,15 @@ enum AppSystems {
     Update,
 }
 
-fn spawn_camera(mut commands: Commands) {
-    commands.spawn((
-        Name::new("Camera"),
-        Camera2d,
-        Projection::Orthographic(OrthographicProjection {
-            scaling_mode: ScalingMode::FixedHorizontal {
-                viewport_width: 1000.0,
-            },
-            ..OrthographicProjection::default_2d()
-        }),
-    ));
-}
+// fn spawn_camera(mut commands: Commands) {
+//     commands.spawn((
+//         Name::new("Camera"),
+//         Camera2d,
+//         Projection::Orthographic(OrthographicProjection {
+//             scaling_mode: ScalingMode::FixedHorizontal {
+//                 viewport_width: 1000.0,
+//             },
+//             ..OrthographicProjection::default_2d()
+//         }),
+//     ));
+// }

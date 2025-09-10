@@ -1,8 +1,8 @@
-use bevy::{color::palettes::tailwind, prelude::*};
+use bevy::{color::palettes::tailwind, prelude::*, render::camera::ScalingMode};
 
 use crate::{
     AppSystems,
-    player::{self, MovementIntent, Player},
+    player::{self, MovementIntent, Player, TrackingCameras},
     top_down::movement::MovementController,
 };
 
@@ -27,6 +27,18 @@ pub fn player(meshes: &mut Assets<Mesh>, mats: &mut Assets<ColorMaterial>) -> im
         Mesh2d(player_mesh),
         MeshMaterial2d(player_color),
         Transform::default(),
+        related!(
+            TrackingCameras[(
+                Name::new("Camera"),
+                Camera2d,
+                Projection::Orthographic(OrthographicProjection {
+                    scaling_mode: ScalingMode::FixedHorizontal {
+                        viewport_width: 1000.0,
+                    },
+                    ..OrthographicProjection::default_2d()
+                }),
+            )]
+        ),
     )
 }
 
@@ -34,8 +46,8 @@ fn record_player_directional_input(
     input: Res<ButtonInput<KeyCode>>,
     mut intent_query: Query<&mut MovementIntent, With<Player>>,
 ) {
-    // Collect directional input.
     let mut intent = Vec2::ZERO;
+
     if input.pressed(KeyCode::KeyW) || input.pressed(KeyCode::ArrowUp) {
         intent.y += 1.0;
     }
@@ -49,8 +61,6 @@ fn record_player_directional_input(
         intent.x += 1.0;
     }
 
-    // Normalize intent so that diagonal movement is the same speed as horizontal / vertical.
-    // This should be omitted if the input comes from an analog stick instead.
     let intent = intent.normalize_or_zero();
 
     // Apply movement intent to controllers.

@@ -2,7 +2,12 @@
 
 use bevy::prelude::*;
 
-use crate::{PlayMode, screens::Screen, side_scroll, top_down};
+use crate::{
+    PlayMode,
+    screens::Screen,
+    side_scroll::{self},
+    top_down,
+};
 
 /// A system that spawns the main level.
 pub fn spawn_level(
@@ -19,13 +24,13 @@ pub fn spawn_level(
     ));
     match *mode {
         PlayMode::SideScroll => {
-            player.insert(children![(side_scroll::player::player(
+            player.insert(children![side_scroll::player::player(
                 &mut meshes,
                 &mut mats
-            ),),]);
+            )]);
         }
         PlayMode::TopDown => {
-            player.insert(children![top_down::player::player(&mut meshes, &mut mats),]);
+            player.insert(children![top_down::player::player(&mut meshes, &mut mats)]);
         }
     };
 }

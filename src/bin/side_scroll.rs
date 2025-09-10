@@ -4,7 +4,8 @@
 #![cfg_attr(not(feature = "dev"), windows_subsystem = "windows")]
 
 use bevy::prelude::*;
+use char_motion_example::side_scroll::level::Ground;
 
 pub fn main() -> AppExit {
-    char_motion_example::run_side_scroll(500.0, 1.0, 5.0, 5.0)
+    char_motion_example::run_side_scroll(500.0, 1.0, 5.0, 5.0, Ground::FlatPeriodic)
 }

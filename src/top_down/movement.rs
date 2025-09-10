@@ -1,16 +1,11 @@
 use bevy::prelude::*;
 
-use crate::{AppSystems, MotionParameters, player::MovementIntent, player::apply_screen_wrap};
+use crate::{AppSystems, MotionParameters, player::MovementIntent};
 
 pub(super) fn plugin(app: &mut App) {
     app.register_type::<MovementController>();
 
-    app.add_systems(
-        Update,
-        apply_movement
-            .before(apply_screen_wrap)
-            .in_set(AppSystems::Update),
-    );
+    app.add_systems(Update, apply_movement.in_set(AppSystems::Update));
 }
 
 #[derive(Component, Reflect, Default)]

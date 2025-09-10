@@ -15,7 +15,7 @@ pub struct MovementController {
     velocity: Vec2,
 }
 
-fn apply_movement(
+pub(super) fn apply_movement(
     time: Res<Time>,
     mut movement_query: Query<(&mut MovementController, &MovementIntent, &mut Transform)>,
     params: Res<MotionParameters>,

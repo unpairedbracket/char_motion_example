@@ -1,4 +1,4 @@
-name: Setup github pages
+name: Release to github pages
  
 on: workflow_dispatch
  

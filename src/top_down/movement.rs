@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 
-use crate::{AppSystems, MotionParameters, player::MovementIntent};
+use crate::{
+    AppSystems, MotionParameters, player::MovementIntent, top_down::level::GroundRotation,
+};
 
 pub(super) fn plugin(app: &mut App) {
     app.register_type::<MovementController>();
@@ -10,7 +12,7 @@ pub(super) fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
-#[require(MovementIntent)]
+#[require(MovementIntent, GroundRotation)]
 pub struct MovementController {
     velocity: Vec2,
 }

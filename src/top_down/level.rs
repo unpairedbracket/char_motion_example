@@ -18,6 +18,9 @@ pub fn plugin(app: &mut App) {
     );
 }
 
+#[derive(Component, Reflect, Default)]
+pub struct GroundRotation(Quat);
+
 #[derive(Resource, Reflect)]
 pub enum Ground {
     FlatPeriodic,
@@ -33,13 +36,16 @@ fn swap_ground(mut ground: ResMut<Ground>, input: Res<ButtonInput<KeyCode>>) {
     }
 }
 
-pub fn move_along_ground(mut objects: Query<&mut Transform>, ground: Res<Ground>) {
+pub fn move_along_ground(
+    mut objects: Query<(&mut Transform, &mut GroundRotation)>,
+    ground: Res<Ground>,
+) {
     match *ground {
         Ground::FlatPeriodic => {}
         Ground::Hills => {
-            for mut tf in &mut objects {
-                let kx = 2.0 * PI / 500.0;
-                let ky = 2.0 * PI / 2000.0;
+            for (mut tf, mut gr) in &mut objects {
+                let kx = 2.0 * PI / 1000.0;
+                let ky = 2.0 * PI / 500.0;
                 let h0 = 100.0;
 
                 let h = h0 * (kx * tf.translation.x).cos() * (ky * tf.translation.y).cos();
@@ -47,9 +53,11 @@ pub fn move_along_ground(mut objects: Query<&mut Transform>, ground: Res<Ground>
 
                 let dz_dx = kx * h0 * (kx * tf.translation.x).sin() * (ky * tf.translation.y).cos();
                 let dz_dy = ky * h0 * (ky * tf.translation.y).sin() * (kx * tf.translation.x).cos();
+                // let dz_dx = 0.;
+                // let dz_dy = (kx * tf.translation.x).sin();
 
                 let normal = Dir3::from_xyz(-dz_dx, -dz_dy, 1.0).unwrap();
-                tf.rotation = Quat::from_rotation_arc(Vec3::Z, *normal);
+                gr.0 = Quat::from_rotation_arc(Vec3::Z, *normal);
             }
         }
     }
@@ -135,18 +143,18 @@ pub fn move_camera(
 }
 
 pub fn draw_ground(
-    players: Query<&Transform, With<Player>>,
+    players: Query<(&Transform, &GroundRotation), With<Player>>,
     ground: Res<Ground>,
     mut gizmo: Gizmos,
 ) {
     match *ground {
         Ground::FlatPeriodic => {}
         Ground::Hills => {
-            for tform in &players {
-                let pos = tform.translation.xy();
-                let norm = (tform.rotation * Vec3::Z).xy();
+            for (tform, gr) in &players {
+                let pos = tform.translation;
+                let norm = gr.0 * Vec3::Z;
 
-                gizmo.arrow_2d(pos, pos + 100.0 * norm, tailwind::BLUE_300);
+                gizmo.arrow(pos, pos + 100.0 * norm, tailwind::BLUE_300);
             }
         }
     }

@@ -1,3 +1,6 @@
+mod material;
+pub use material::*;
+
 use std::f32::consts::PI;
 
 use bevy::{color::palettes::tailwind, prelude::*};
@@ -8,6 +11,7 @@ use crate::{
 };
 
 pub fn plugin(app: &mut App) {
+    app.add_plugins(material::plugin);
     app.register_type::<Ground>();
 
     app.add_systems(

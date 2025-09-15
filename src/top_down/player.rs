@@ -3,7 +3,7 @@ use bevy::{color::palettes::tailwind, prelude::*, render::camera::ScalingMode};
 use crate::{
     AppSystems,
     player::{self, MovementIntent, Player, TrackingCameras},
-    top_down::movement::MovementController,
+    top_down::{level::GroundMaterial, movement::MovementController},
 };
 
 pub(super) fn plugin(app: &mut App) {
@@ -15,17 +15,24 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-pub fn player(meshes: &mut Assets<Mesh>, mats: &mut Assets<ColorMaterial>) -> impl Bundle {
+pub fn player(
+    meshes: &mut Assets<Mesh>,
+    mats: &mut Assets<ColorMaterial>,
+    ground_mat: &mut Assets<GroundMaterial>,
+) -> impl Bundle {
     let mesh = Circle::new(10.0).mesh().build();
     let player_mesh = meshes.add(mesh);
-    let player_color = mats.add(Color::from(tailwind::BLUE_400));
+    let player_colour = mats.add(Color::from(tailwind::BLUE_400));
+
+    let bg_mesh = meshes.add(Rectangle::new(1000.0, 1000.0).mesh().build());
+    let bg_mat = ground_mat.add(tailwind::RED_500);
 
     (
         Name::new("Player"),
         Player,
         MovementController::default(),
         Mesh2d(player_mesh),
-        MeshMaterial2d(player_color),
+        MeshMaterial2d(player_colour),
         Transform::default(),
         related!(
             TrackingCameras[(
@@ -37,6 +44,11 @@ pub fn player(meshes: &mut Assets<Mesh>, mats: &mut Assets<ColorMaterial>) -> im
                     },
                     ..OrthographicProjection::default_2d()
                 }),
+                children![(
+                    Transform::from_xyz(0.0, 0.0, -10.0),
+                    Mesh2d(bg_mesh),
+                    MeshMaterial2d(bg_mat)
+                )]
             )]
         ),
     )
